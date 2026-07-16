@@ -1,0 +1,29 @@
+# OPTIONAL: long-running SPCS service (near-real-time pattern), the documented
+# alternative to job-per-pipeline. Use this only when you need a pipeline running
+# continuously rather than on a Task schedule.
+#
+# WARNING: you pay for pool nodes for as long as the service is running, even
+# while idle between loops. Use the Task + job pattern for most pipelines.
+#
+# Create with:
+#   CREATE SERVICE dlt_stream_svc
+#     IN COMPUTE POOL DLT_POOL
+#     FROM SPECIFICATION_FILE = 'service.yaml'
+#     MIN_INSTANCES = 1 MAX_INSTANCES = 1;
+#
+# The container loops internally. Replace the command with your own scheduler
+# for real use; the example below re-runs github_issues every 5 minutes.
+
+spec:
+  containers:
+    - name: dlt
+      image: /DLT_DB/DEPLOY/IMAGES/dlt-pipeline:latest
+      command:
+        - "/bin/sh"
+        - "-c"
+        - "while true; do python -m pipelines.run github_issues; sleep 300; done"
+      env:
+        DESTINATION__SNOWFLAKE__CREDENTIALS__AUTHENTICATOR: oauth
+        DESTINATION__SNOWFLAKE__CREDENTIALS__DATABASE: DLT_DB
+        DESTINATION__SNOWFLAKE__CREDENTIALS__WAREHOUSE: DLT_WH
+        LOG_LEVEL: INFO

@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+.venv/
+*.egg-info/
+dist/
+.pytest_cache/
+
+# dlt
+# secrets.toml contains credentials — never commit it.
+# config.toml and secrets.toml.example ARE safe to commit.
+.dlt/secrets.toml
+~/.dlt/
+*.duckdb
+
+# OS
+.DS_Store

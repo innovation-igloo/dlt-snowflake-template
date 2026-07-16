@@ -1,0 +1,28 @@
+# Reference SPCS job spec for a single dlt pipeline run (job-per-pipeline, the
+# default pattern). This is run-to-completion: the container runs the pipeline
+# and exits, so you only pay for pool nodes while it runs (5-minute minimum).
+#
+# In practice each pipeline's Task emits this spec INLINE with the right name via
+# deploy/tasks/generate_tasks.py (EXECUTE JOB SERVICE ... FROM SPECIFICATION $$..$$).
+# This file documents the shape and is handy for a manual one-off run:
+#
+#   EXECUTE JOB SERVICE
+#     IN COMPUTE POOL DLT_POOL
+#     NAME = dlt_job_adhoc
+#     FROM SPECIFICATION_FILE = 'job.yaml';
+#
+# Replace <PIPELINE_NAME> before a manual run.
+
+spec:
+  containers:
+    - name: dlt
+      image: /DLT_DB/DEPLOY/IMAGES/dlt-pipeline:latest
+      args:
+        - "<PIPELINE_NAME>"          # e.g. pg_public  (or "--group", "batch_hourly")
+      env:
+        # In-Snowflake auth: the Snowflake destination uses the ambient OAuth
+        # session token — no stored credentials in the image.
+        DESTINATION__SNOWFLAKE__CREDENTIALS__AUTHENTICATOR: oauth
+        DESTINATION__SNOWFLAKE__CREDENTIALS__DATABASE: DLT_DB
+        DESTINATION__SNOWFLAKE__CREDENTIALS__WAREHOUSE: DLT_WH
+        LOG_LEVEL: INFO

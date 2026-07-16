@@ -1,0 +1,80 @@
+name: deploy
+
+# Repeatable CD for the dlt registry: sync registry.yml into the control table,
+# ship the SPCS job spec template, and (re)create the per-pipeline Tasks.
+#
+# Keyless auth via GitHub OIDC + a Snowflake TYPE=SERVICE user with a matching
+# WORKLOAD_IDENTITY (see sql/02b_service_user_oidc.sql). No secrets stored except
+# the account identifier.
+#
+# Prerequisite (one-time, run by an admin): the bootstrap DDL in sql/ — including
+# 06_pipeline_registry.sql, which creates OPS.PIPELINE_REGISTRY and @DEPLOY.SPECS.
+# This workflow does not run account-level DDL.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "pipelines/registry.yml"
+      - "deploy/spcs/dlt_job.tmpl.yaml"
+      - "deploy/tasks/generate_tasks.py"
+      - ".github/workflows/deploy.yml"
+
+permissions:
+  id-token: write # required for OIDC
+  contents: read
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # Gate on a GitHub environment (add required reviewers in repo settings).
+    # The OIDC subject in 02b_service_user_oidc.sql uses `environment:deploy`.
+    environment: deploy
+    env:
+      SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+      SNOWFLAKE_USER: ${{ vars.SNOWFLAKE_USER }} # DLT_DEPLOYER
+      SNOWFLAKE_ROLE: ${{ vars.SNOWFLAKE_ROLE }} # DLT_LOADER_ROLE
+      SNOWFLAKE_WAREHOUSE: ${{ vars.SNOWFLAKE_WAREHOUSE }} # DLT_WH
+      SNOWFLAKE_DATABASE: DLT_DB
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      # Installs `snow` and, with use-oidc, mints the OIDC token + sets
+      # SNOWFLAKE_AUTHENTICATOR=WORKLOAD_IDENTITY for `snow ... -x`.
+      - uses: snowflakedb/snowflake-actions@v3
+        with:
+          use-oidc: true
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # --emit-sql / generate_tasks only need pyyaml (no dlt / connector),
+      # so the deploy runner stays lean and needs no connector credentials.
+      - name: Install registry tooling
+        run: pip install pyyaml
+
+      - name: Verify Snowflake connection
+        run: snow connection test -x
+
+      - name: Sync registry.yml -> OPS.PIPELINE_REGISTRY
+        run: |
+          python -m pipelines.registry_sync --emit-sql --prune > registry_sync.sql
+          echo "----- registry_sync.sql -----" && cat registry_sync.sql
+          snow sql -f registry_sync.sql -x
+
+      - name: Upload job spec template to @DEPLOY.SPECS
+        run: snow stage copy deploy/spcs/dlt_job.tmpl.yaml @DLT_DB.DEPLOY.SPECS --overwrite -x
+
+      - name: Generate and apply per-pipeline Tasks
+        run: |
+          python -m deploy.tasks.generate_tasks > tasks.sql
+          echo "----- tasks.sql -----" && cat tasks.sql
+          snow sql -f tasks.sql -x
+
+      # Tasks are created SUSPENDED (CREATE OR ALTER). Resume them deliberately —
+      # either manually, or by uncommenting a resume step here once you're ready
+      # for them to start firing on schedule.

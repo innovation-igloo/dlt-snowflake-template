@@ -1,0 +1,61 @@
+# Pipeline registry — the single source of truth for every dlt pipeline in this
+# repo. The runner (pipelines/run.py) and the task generator
+# (deploy/tasks/generate_tasks.py) both read this file.
+#
+# Add a pipeline by appending an entry under `pipelines:`. Anything you set in
+# `defaults` is merged into every pipeline unless the pipeline overrides it.
+#
+# SECRETS ARE NEVER STORED HERE. `config` values that need credentials point at
+# a key in .dlt/secrets.toml (or a Snowflake secret) — see the examples below.
+
+defaults:
+  destination: snowflake
+  dataset_name: RAW            # target Snowflake schema
+  write_disposition: merge     # append | replace | merge
+  load_warehouse: DLT_WH       # Gen2 multi-cluster warehouse (see sql/05_load_warehouse.sql)
+  compute_pool: DLT_POOL       # SPCS compute pool (see sql/04_compute_pool.sql)
+
+pipelines:
+  # --- Example 1: relational source via sql_database ----------------------
+  - name: pg_public
+    source: sql_database
+    schedule: "0 * * * *"        # hourly (cron; UTC)
+    dataset_name: RAW_PG
+    write_disposition: merge
+    group: batch_hourly          # optional: pipelines sharing a group can run in one SPCS job
+    config:
+      # `secret:` marks a reference into .dlt/secrets.toml (or a Snowflake secret);
+      # anything without the prefix is a literal. Here dlt resolves:
+      #   [sources.pg_public.credentials]
+      #   drivername = "postgresql+psycopg2"  (host/username/password/database/port)
+      credentials: "secret:sources.pg_public.credentials"
+      schema: public             # source schema to reflect
+      backend: connectorx        # fastest backend for Postgres
+      # table_names: ["orders", "customers"]   # optional allow-list
+
+  # --- Example 2: REST API via rest_api_source ----------------------------
+  - name: github_issues
+    source: rest_api
+    schedule: "*/30 * * * *"     # every 30 minutes
+    dataset_name: RAW_GITHUB
+    write_disposition: merge
+    config:
+      client:
+        base_url: "https://api.github.com/repos/dlt-hub/dlt/"
+        auth:
+          # token resolved from .dlt/secrets.toml -> [sources.github_issues] token = "..."
+          token: "secret:sources.github_issues.token"
+        paginator: header_link
+      resource_defaults:
+        primary_key: id
+        write_disposition: merge
+      resources:
+        - name: issues
+          endpoint:
+            path: issues
+            params:
+              since: "{incremental.start_value}"
+              state: all
+            incremental:
+              cursor_path: updated_at
+              initial_value: "2024-01-01T00:00:00Z"

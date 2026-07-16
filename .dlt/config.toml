@@ -1,0 +1,32 @@
+# Non-secret dlt configuration.
+# Secrets (credentials, tokens) go in secrets.toml (see secrets.toml.example).
+# Pipeline-level settings (destination, dataset_name, write_disposition, warehouses)
+# are driven by registry.yml — no need to duplicate them here.
+
+[runtime]
+log_level = "INFO"            # override at runtime with LOG_LEVEL env var
+# dlt sends ANONYMOUS usage telemetry to dltHub by default (outbound HTTPS on every
+# pipeline.run and CLI command: hashed names, elapsed, success). Disabled here so
+# nothing leaves your environment — important for egress-restricted SPCS and
+# compliance. Set to true (or delete) to re-enable; CLI equivalent: `dlt --disable-telemetry`.
+# This is unrelated to observability (the Snowflake event table / OPS._DLT_RUNS stay put).
+dlthub_telemetry = false
+
+# ---------------------------------------------------------------------------
+# Snowflake destination — query tagging.
+# dlt query tagging is OFF by default; setting query_tag turns it on. Every
+# Snowflake session dlt opens is then tagged with the operation, source,
+# resource, table, load_id, and pipeline_name (queryable in QUERY_HISTORY /
+# ACCOUNT_USAGE). The {placeholders} are filled by dlt per operation.
+# ---------------------------------------------------------------------------
+[destination.snowflake]
+query_tag = '{"operation":"{operation}", "source":"{source}", "resource":"{resource}", "table":"{table}", "load_id":"{load_id}", "pipeline_name":"{pipeline_name}"}'
+
+# ---------------------------------------------------------------------------
+# SQL Database source — optional backend / staging overrides.
+# Uncomment and adjust if you want a non-default Arrow backend or staging.
+# ---------------------------------------------------------------------------
+# [sources.sql_database]
+# backend = "connectorx"      # connectorx | pyarrow | pandas | sqlalchemy
+# # Staging area used during large incremental loads (optional):
+# # staging = "filesystem"
