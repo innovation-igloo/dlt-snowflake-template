@@ -11,15 +11,12 @@ name: deploy
 # 06_pipeline_registry.sql, which creates OPS.PIPELINE_REGISTRY and @DEPLOY.SPECS.
 # This workflow does not run account-level DDL.
 
+# Manual-only: run from the Actions tab (workflow_dispatch) once the OIDC service
+# user, repo secret/vars, and the `deploy` environment are configured (see
+# sql/02b_service_user_oidc.sql and the README CI/CD section). It does NOT run on
+# push, so it never fails before Snowflake auth is set up.
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - "pipelines/registry.yml"
-      - "deploy/spcs/dlt_job.tmpl.yaml"
-      - "deploy/tasks/generate_tasks.py"
-      - ".github/workflows/deploy.yml"
 
 permissions:
   id-token: write # required for OIDC

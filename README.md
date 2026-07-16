@@ -120,7 +120,7 @@ ALTER TASK dlt_task_github_issues RESUME;
 Two workflows ship in `.github/workflows/`:
 
 - **`ci.yml`** — offline checks on every push/PR: lint, import/compile, `run --list`, and the DuckDB smoke + unit tests. No Snowflake connection.
-- **`deploy.yml`** — the repeatable deploy, gated to the `deploy` GitHub environment. It authenticates with a **GitHub OIDC token** (no stored keys) via the official [`snowflakedb/snowflake-actions`](https://github.com/snowflakedb/snowflake-actions) action, then:
+- **`deploy.yml`** — the repeatable deploy. **Manual only** (run it from the Actions tab / `workflow_dispatch`) so it never fails before Snowflake auth is configured. Gated to the `deploy` GitHub environment, it authenticates with a **GitHub OIDC token** (no stored keys) via the official [`snowflakedb/snowflake-actions`](https://github.com/snowflakedb/snowflake-actions) action, then:
   1. `snow connection test -x`
   2. `registry_sync --emit-sql --prune` → `snow sql -f` (syncs `registry.yml` into `OPS.PIPELINE_REGISTRY`)
   3. uploads `dlt_job.tmpl.yaml` to `@DLT_DB.DEPLOY.SPECS`
