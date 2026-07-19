@@ -17,7 +17,9 @@ Auth:
 
 The destination defaults to each pipeline's `destination` field (snowflake) but
 can be overridden globally with the DLT_DESTINATION env var (the smoke test sets
-it to duckdb).
+it to duckdb).  The target schema defaults to the spec's `dataset_name` but can
+be overridden per run with DLT_DATASET (dev-in-Snowflake runs set this to an
+isolated per-developer schema such as DEV_TONY).
 
 Config source (control plane):
   Specs are read from the DLT_DB.OPS.PIPELINE_REGISTRY table in Snowflake/SPCS
@@ -81,6 +83,16 @@ def build_source(spec: PipelineSpec):
 
         return rest_api_source(cfg)
 
+    if spec.source == "sample":
+        # Zero-dependency in-code generator; works locally and inside SPCS (no
+        # external source, no secret). See pipelines/sample_source.py.
+        from pipelines.sample_source import sample_source  # noqa: PLC0415
+
+        return sample_source(
+            n_customers=cfg.get("n_customers", 5),
+            n_orders=cfg.get("n_orders", 5),
+        )
+
     # models.validate() guards this; this branch is a defensive fallback.
     raise ValueError(f"unhandled source type: {spec.source!r}")
 
@@ -91,18 +103,23 @@ def run_pipeline(spec: PipelineSpec) -> None:
 
     destination: str = os.environ.get("DLT_DESTINATION") or spec.destination
 
+    # DLT_DATASET overrides the target schema for a single run without touching
+    # the registry. Dev-in-Snowflake runs set it to an isolated per-developer
+    # schema (e.g. DEV_TONY); prod runs leave it unset and use spec.dataset_name.
+    dataset: str = os.environ.get("DLT_DATASET") or spec.dataset_name
+
     pipeline_log.info(
         "starting pipeline (source=%s, destination=%s, dataset=%s, disposition=%s)",
         spec.source,
         destination,
-        spec.dataset_name,
+        dataset,
         spec.write_disposition,
     )
 
     pipeline = dlt.pipeline(
         pipeline_name=spec.name,
         destination=destination,
-        dataset_name=spec.dataset_name,
+        dataset_name=dataset,
     )
 
     try:

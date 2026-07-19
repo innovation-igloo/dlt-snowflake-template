@@ -23,6 +23,6 @@ spec:
         # In-Snowflake auth: the Snowflake destination uses the ambient OAuth
         # session token — no stored credentials in the image.
         DESTINATION__SNOWFLAKE__CREDENTIALS__AUTHENTICATOR: oauth
-        DESTINATION__SNOWFLAKE__CREDENTIALS__DATABASE: DLT_DB
+        DESTINATION__SNOWFLAKE__CREDENTIALS__DATABASE: DLT_PROD_DB
         DESTINATION__SNOWFLAKE__CREDENTIALS__WAREHOUSE: DLT_WH
         LOG_LEVEL: INFO

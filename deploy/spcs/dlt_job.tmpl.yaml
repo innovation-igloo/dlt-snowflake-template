@@ -1,6 +1,6 @@
 # SPCS job spec template for a single dlt pipeline run.
 #
-# Uploaded to @DLT_DB.DEPLOY.SPECS (see sql/06_pipeline_registry.sql) and
+# Uploaded to @DLT_DB.DEPLOY.SPECS (see sql/base/03_registry.sql) and
 # referenced by the generated Tasks:
 #
 #   EXECUTE JOB SERVICE
@@ -22,10 +22,13 @@ spec:
     - name: dlt
       image: /DLT_DB/DEPLOY/IMAGES/dlt-pipeline:latest
       args:
-        - "{{ pipeline }}"
+        - {{ pipeline }}
       env:
         DESTINATION__SNOWFLAKE__CREDENTIALS__AUTHENTICATOR: oauth
-        DESTINATION__SNOWFLAKE__CREDENTIALS__DATABASE: DLT_DB
+        DESTINATION__SNOWFLAKE__CREDENTIALS__DATABASE: DLT_PROD_DB
         DESTINATION__SNOWFLAKE__CREDENTIALS__WAREHOUSE: DLT_WH
+        # registry_store reads the control-plane registry with these connector vars.
+        SNOWFLAKE_WAREHOUSE: DLT_WH
+        SNOWFLAKE_DATABASE: DLT_DB
         DLT_REGISTRY_SOURCE: auto
         LOG_LEVEL: INFO

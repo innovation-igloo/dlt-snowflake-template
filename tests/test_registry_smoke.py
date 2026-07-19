@@ -33,7 +33,7 @@ def test_registry_loads_and_validates() -> None:
     assert len(registry.pipelines) >= 1, "registry must contain at least one pipeline"
 
     for spec in registry.pipelines:
-        assert spec.source in ("sql_database", "rest_api"), (
+        assert spec.source in ("sql_database", "rest_api", "sample"), (
             f"unsupported source '{spec.source}' in pipeline '{spec.name}'"
         )
         assert isinstance(spec.config, dict) and spec.config, (

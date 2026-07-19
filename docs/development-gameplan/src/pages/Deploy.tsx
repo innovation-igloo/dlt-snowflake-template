@@ -1,7 +1,7 @@
 import Note from '../components/Note';
 import CodeBlock from '../components/CodeBlock';
 
-const OIDC_USER_SQL = `<span class="cmt">-- sql/02b_service_user_oidc.sql — keyless CI/CD identity</span>
+const OIDC_USER_SQL = `<span class="cmt">-- sql/prod/03b_service_user_oidc.sql — keyless CI/CD identity</span>
 <span class="kw">CREATE USER IF NOT EXISTS</span> DLT_DEPLOYER
   TYPE = <span class="kw">SERVICE</span>
   DEFAULT_ROLE = DLT_LOADER_ROLE
@@ -44,30 +44,33 @@ export default function Deploy() {
         </p>
 
         <h3>
-          Bootstrap DDL (<code>sql/</code>)
+          Bootstrap DDL (<code>sql/base</code> + <code>prod</code>/<code>dev</code>)
         </h3>
+        <p>
+          Grouped by scope and driven by <code>make setup-base</code>, then{' '}
+          <code>setup-dev</code> (the primary developer path) — and <code>setup-prod</code> later, when
+          you&apos;re ready to schedule production. See the <b>Setup Plan</b> for the full ordered runbook;
+          each script switches to the least-privilege admin role it needs.
+        </p>
         <ol className="steps">
           <li>
-            <b>Account setup.</b> Create a dedicated role hierarchy (e.g. <code>DLT_LOADER_ROLE</code>), a
-            Gen2 multi-cluster load warehouse (<code>DLT_WH</code>, auto-suspend), an SPCS compute pool
-            (<code>DLT_POOL</code>), the target database and schema, and grant the role the needed
-            <code>USAGE</code>/<code>CREATE</code> privileges (<code>04_compute_pool.sql</code>,{' '}
-            <code>05_load_warehouse.sql</code>).
+            <b>Base (control plane).</b> Create the roles (<code>DLT_LOADER_ROLE</code>,{' '}
+            <code>DLT_DEV_ROLE</code>) and <code>DLT_DB</code>: the <code>OPS.PIPELINE_REGISTRY</code>
+            table, the <code>DEPLOY.IMAGES</code> image repo, and the <code>@DEPLOY.SPECS</code> stage
+            holding the job spec templates. (<code>sql/base/*</code>)
           </li>
           <li>
-            <b>Service user.</b> Create <code>DLT_LOADER</code>, assign the loader role, and register its
-            RSA public key (<code>ALTER USER ... SET RSA_PUBLIC_KEY=...</code>) for key-pair auth from
-            external runners.
+            <b>Development (primary).</b> Create <code>DLT_DEV_DB</code> with a <code>CREATE SCHEMA</code>
+            grant for per-developer <code>DEV_&lt;user&gt;</code> schemas, plus the small{' '}
+            <code>DLT_DEV_POOL</code> / <code>DLT_DEV_WH</code> compute. This is where developers work
+            first. (<code>sql/dev/*</code>)
           </li>
           <li>
-            <b>External stage (optional).</b> Only if using external staging: create a storage integration
-            and an external stage, and grant the loader role usage on both.
-          </li>
-          <li>
-            <b>Config store.</b> Create the runtime registry table (<code>OPS.PIPELINE_REGISTRY</code>) and
-            the specs stage (<code>@DLT_DB.DEPLOY.SPECS</code>) holding the job spec template
-            (<code>dlt_job.tmpl.yaml</code>). Grant the loader role <code>SELECT</code> on the table and
-            <code>READ</code> on the stage. (See <b>Scaling &amp; Multi-pipeline &rarr; Config as data</b>.)
+            <b>Production (later, customer-tailored).</b> When you&apos;re ready for scheduled loads, review
+            and adapt <code>sql/prod/*</code> (warehouse sizing, multi-cluster, service accounts,
+            scheduling), then create <code>DLT_PROD_DB</code> (<code>RAW</code> + <code>OPS</code>), the{' '}
+            <code>DLT_POOL</code> / <code>DLT_WH</code> compute, and the <code>DLT_LOADER</code> service
+            user.
           </li>
         </ol>
 

@@ -7,6 +7,7 @@ import Overview from './pages/Overview';
 import Architecture from './pages/Architecture';
 import RepoStructure from './pages/RepoStructure';
 import Auth from './pages/Auth';
+import Setup from './pages/Setup';
 import Backends from './pages/sql/Backends';
 import Incremental from './pages/sql/Incremental';
 import WriteMerge from './pages/sql/WriteMerge';
@@ -49,6 +50,7 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <Route path="architecture" element={<Architecture />} />
           <Route path="repo" element={<RepoStructure />} />
           <Route path="auth" element={<Auth />} />
+          <Route path="setup" element={<Setup />} />
           <Route path="backends" element={<Backends />} />
           <Route path="incremental" element={<Incremental />} />
           <Route path="merge" element={<WriteMerge />} />

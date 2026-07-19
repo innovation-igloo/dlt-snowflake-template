@@ -18,9 +18,11 @@ dlthub_telemetry = false
 # Snowflake session dlt opens is then tagged with the operation, source,
 # resource, table, load_id, and pipeline_name (queryable in QUERY_HISTORY /
 # ACCOUNT_USAGE). The {placeholders} are filled by dlt per operation.
+# NOTE: dlt fills this with str.format(), so the literal JSON braces are doubled
+# ({{ }}) to escape them; only the {placeholders} use single braces.
 # ---------------------------------------------------------------------------
 [destination.snowflake]
-query_tag = '{"operation":"{operation}", "source":"{source}", "resource":"{resource}", "table":"{table}", "load_id":"{load_id}", "pipeline_name":"{pipeline_name}"}'
+query_tag = '{{"operation":"{operation}", "source":"{source}", "resource":"{resource}", "table":"{table}", "load_id":"{load_id}", "pipeline_name":"{pipeline_name}"}}'
 
 # ---------------------------------------------------------------------------
 # SQL Database source — optional backend / staging overrides.

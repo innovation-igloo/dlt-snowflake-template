@@ -64,7 +64,7 @@ spec:
         - <span class="str">"{{ pipeline }}"</span>        <span class="cmt"># injected by USING at run time</span>
       env:
         DESTINATION__SNOWFLAKE__CREDENTIALS__AUTHENTICATOR: oauth
-        DESTINATION__SNOWFLAKE__CREDENTIALS__DATABASE: DLT_DB
+        DESTINATION__SNOWFLAKE__CREDENTIALS__DATABASE: DLT_PROD_DB
         DESTINATION__SNOWFLAKE__CREDENTIALS__WAREHOUSE: DLT_WH`;
 
 const TASK_TEMPLATE_SQL = `<span class="cmt">-- one Task per pipeline — spec lives on a stage, name passed via USING</span>
@@ -209,7 +209,7 @@ export default function Scaling() {
                     virtual warehouse. One shared <b>Gen2 multi-cluster</b> warehouse lets many pipelines
                     load concurrently; clusters start and stop with demand.
                   </p>
-                  <CodeBlock label="sql/05_load_warehouse.sql (core)" html={WAREHOUSE_SQL} />
+                  <CodeBlock label="sql/prod/02_compute.sql (warehouse)" html={WAREHOUSE_SQL} />
                   <p>
                     Credits/hour = <b>size-rate × running clusters</b>, billed per-second and only while a
                     cluster is up. An XSMALL Gen2 on AWS (1.35 cr/hr) auto-scaling to 3 clusters peaks
