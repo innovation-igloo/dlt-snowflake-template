@@ -24,6 +24,6 @@ spec:
         - "while true; do python -m pipelines.run github_issues; sleep 300; done"
       env:
         DESTINATION__SNOWFLAKE__CREDENTIALS__AUTHENTICATOR: oauth
-        DESTINATION__SNOWFLAKE__CREDENTIALS__DATABASE: DLT_DB
+        DESTINATION__SNOWFLAKE__CREDENTIALS__DATABASE: DLT_PROD_DB
         DESTINATION__SNOWFLAKE__CREDENTIALS__WAREHOUSE: DLT_WH
         LOG_LEVEL: INFO

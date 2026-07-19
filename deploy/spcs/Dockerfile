@@ -1,10 +1,14 @@
 # Container image for dlt pipelines. One image runs any pipeline in the registry;
 # the pipeline name is passed as the container argument (see the staged spec
-# template deploy/spcs/dlt_job.tmpl.yaml and the generated tasks). Build and push
-# to a Snowflake image repository:
+# template deploy/spcs/dlt_job.tmpl.yaml and the generated tasks).
 #
-#   docker build -t dlt-pipeline:latest -f deploy/spcs/Dockerfile .
-#   docker tag dlt-pipeline:latest <org>-<acct>.registry.snowflakecomputing.com/DLT_DB/DEPLOY/IMAGES/dlt-pipeline:latest
+# ARCHITECTURE: SPCS compute pools are x86_64, so this image MUST be linux/amd64.
+# Build it on an amd64 runner (the CI job in .github/workflows/deploy.yml) rather
+# than an Apple Silicon laptop, where `--platform linux/amd64` emulates via QEMU
+# and is very slow. Local build (emulated) for reference:
+#
+#   docker build --platform linux/amd64 -t dlt-pipeline:latest -f deploy/spcs/Dockerfile .
+#   docker tag ...  <org>-<acct>.registry.snowflakecomputing.com/DLT_DB/DEPLOY/IMAGES/dlt-pipeline:latest
 #   docker push ...
 #
 # docker run <image> pg_public         <- runs that pipeline
@@ -19,6 +23,9 @@
 
 FROM python:3.11-slim
 
+# uv for fast, reproducible installs (matches the local dev toolchain). Pinned.
+COPY --from=ghcr.io/astral-sh/uv:0.11.2 /uv /uvx /bin/
+
 # System deps: build tools + unixODBC headers required by pyodbc (SQL Server/ODBC sources).
 RUN apt-get update \
     && apt-get install -y --no-install-recommends build-essential unixodbc-dev \
@@ -30,7 +37,8 @@ WORKDIR /app
 # `pipelines` package present to build. registry.yml lives inside pipelines/.
 COPY pyproject.toml ./
 COPY pipelines/ ./pipelines/
-RUN pip install --no-cache-dir ".[postgres,mssql,mysql]"
+# uv pip install into the system environment (no venv); far faster than pip.
+RUN uv pip install --system --no-cache ".[postgres,mssql,mysql]"
 
 COPY .dlt/config.toml ./.dlt/config.toml
 

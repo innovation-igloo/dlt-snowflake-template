@@ -30,7 +30,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
 
 from pipelines.models import PipelineSpec, load_registry  # noqa: E402
 
-# Stage holding the SPCS job spec template (see sql/06_pipeline_registry.sql).
+# Stage holding the SPCS job spec template (see sql/base/03_registry.sql).
 # The image path lives inside the template, not here.
 SPECS_STAGE = "@DLT_DB.DEPLOY.SPECS"
 SPEC_TEMPLATE_FILE = "dlt_job.tmpl.yaml"
@@ -52,7 +52,7 @@ AS
     NAME = {job_name}
     FROM {SPECS_STAGE}
     SPECIFICATION_TEMPLATE_FILE = '{SPEC_TEMPLATE_FILE}'
-    USING (pipeline => '{spec.name}');
+    USING (pipeline => '"{spec.name}"');
 
 -- ALTER TASK {task_name} RESUME;   -- uncomment to start scheduling
 """
