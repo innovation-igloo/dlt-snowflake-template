@@ -24,6 +24,7 @@ export const navGroups: NavGroup[] = [
       { path: '/architecture', label: 'Architecture' },
       { path: '/repo', label: 'Repo Structure' },
       { path: '/auth', label: 'Auth & Secrets' },
+      { path: '/setup', label: 'Setup Plan' },
     ],
   },
   {

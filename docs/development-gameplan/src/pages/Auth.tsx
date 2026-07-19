@@ -6,7 +6,7 @@ const SECRETS_TOML = `<span class="cmt"># ---- Snowflake destination: key-pair a
 [destination.snowflake.credentials]
 host = <span class="str">"orgname-accountname"</span>   <span class="cmt"># account identifier, not the full URL</span>
 username = <span class="str">"DLT_LOADER"</span>
-database = <span class="str">"ANALYTICS"</span>
+database = <span class="str">"DLT_PROD_DB"</span>
 warehouse = <span class="str">"DLT_WH"</span>
 role = <span class="str">"DLT_LOADER_ROLE"</span>
 private_key_path = <span class="str">"/secrets/rsa_key.p8"</span>
@@ -86,6 +86,13 @@ export default function Auth() {
           <b>In SPCS, delete the destination credentials block.</b> Set{' '}
           <code>authenticator = "oauth"</code> and let dlt pick up the session token. The service's
           assigned Snowflake role governs what it can write.
+        </Note>
+
+        <Note variant="tip">
+          <b>Develop without a local secrets file.</b> For in-Snowflake development, store source
+          credentials in a Snowflake <code>SECRET</code> object and let the dev SPCS job bind it into the
+          runner's env — no <code>.dlt/secrets.toml</code> needed. See the <b>Setup Plan</b> &rarr;{' '}
+          <i>Develop in Snowflake</i>.
         </Note>
       </div>
     </section>

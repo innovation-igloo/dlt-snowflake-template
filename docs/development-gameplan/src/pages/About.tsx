@@ -31,7 +31,7 @@ dlt init salesforce snowflake
 
 const SNOWFLAKE_SECRETS = `<span class="cmt"># .dlt/secrets.toml (git-ignored) — password or key-pair or OAuth</span>
 [destination.snowflake.credentials]
-database  = <span class="str">"DLT_DB"</span>
+database  = <span class="str">"DLT_PROD_DB"</span>
 username  = <span class="str">"DLT_LOADER"</span>
 host      = <span class="str">"&lt;account-identifier&gt;"</span>
 warehouse = <span class="str">"DLT_WH"</span>       <span class="cmt"># optional if the user has a default</span>
