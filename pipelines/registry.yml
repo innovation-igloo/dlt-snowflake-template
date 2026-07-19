@@ -59,3 +59,18 @@ pipelines:
             incremental:
               cursor_path: updated_at
               initial_value: "2024-01-01T00:00:00Z"
+
+  # --- Zero-dependency smoke test: in-code generator source --------------------
+  # No external source, no credentials, no local files. Runs identically in every
+  # environment, which makes it the canonical "does my setup work?" pipeline:
+  #   make run    NAME=sample     # local DuckDB
+  #   make run-sf NAME=sample     # laptop -> Snowflake (into DLT_DEV_DB.DEV_<user>)
+  #   make dev-run NAME=sample    # in-Snowflake SPCS job (no SECRET needed)
+  # No `schedule` on purpose, so it never becomes a production Task.
+  - name: sample
+    source: sample
+    dataset_name: RAW_SAMPLE
+    write_disposition: merge
+    config:
+      n_customers: 5             # rows emitted by the generator (see pipelines/sample_source.py)
+      n_orders: 5

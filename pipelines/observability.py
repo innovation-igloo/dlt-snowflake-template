@@ -26,6 +26,20 @@ if TYPE_CHECKING:
 _LOG_CONFIGURED: bool = False
 
 
+class _PipelineDefaultFilter(logging.Filter):
+    """Ensure every record has a `pipeline` attribute.
+
+    The handler's formatter references %(pipeline)s, but records emitted without
+    a LoggerAdapter (module-level `log`, and record_run's warnings) don't set it.
+    Without this, formatting raises KeyError('pipeline') and floods stderr.
+    """
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        if not hasattr(record, "pipeline"):
+            record.pipeline = "-"
+        return True
+
+
 def configure_logging(pipeline_name: str) -> logging.LoggerAdapter:
     """Attach a structured handler to the 'dlt_pipeline' logger (idempotent).
 
@@ -48,6 +62,7 @@ def configure_logging(pipeline_name: str) -> logging.LoggerAdapter:
 
         handler = logging.StreamHandler()
         handler.setLevel(level)
+        handler.addFilter(_PipelineDefaultFilter())
 
         try:
             from snowflake.telemetry.logs import SnowflakeLogFormatter  # type: ignore[import]

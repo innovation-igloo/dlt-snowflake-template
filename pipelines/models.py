@@ -16,7 +16,7 @@ from typing import Any
 import yaml
 
 # Sources the runner knows how to build. Extend build_source() in run.py to add more.
-SUPPORTED_SOURCES: tuple[str, ...] = ("sql_database", "rest_api")
+SUPPORTED_SOURCES: tuple[str, ...] = ("sql_database", "rest_api", "sample")
 
 # Resolved relative to this file so the loader works from any working directory.
 REGISTRY_PATH: Path = Path(__file__).with_name("registry.yml")
