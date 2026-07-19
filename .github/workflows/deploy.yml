@@ -4,16 +4,16 @@ name: deploy
 # ship the SPCS job spec template, and (re)create the per-pipeline Tasks.
 #
 # Keyless auth via GitHub OIDC + a Snowflake TYPE=SERVICE user with a matching
-# WORKLOAD_IDENTITY (see sql/02b_service_user_oidc.sql). No secrets stored except
+# WORKLOAD_IDENTITY (see sql/prod/03b_service_user_oidc.sql). No secrets stored except
 # the account identifier.
 #
-# Prerequisite (one-time, run by an admin): the bootstrap DDL in sql/ — including
-# 06_pipeline_registry.sql, which creates OPS.PIPELINE_REGISTRY and @DEPLOY.SPECS.
-# This workflow does not run account-level DDL.
+# Prerequisite (one-time, run by an admin): the bootstrap DDL in sql/base/ and
+# sql/prod/ — including sql/base/03_registry.sql, which creates OPS.PIPELINE_REGISTRY
+# and @DEPLOY.SPECS. This workflow does not run account-level DDL.
 
 # Manual-only: run from the Actions tab (workflow_dispatch) once the OIDC service
 # user, repo secret/vars, and the `deploy` environment are configured (see
-# sql/02b_service_user_oidc.sql and the README CI/CD section). It does NOT run on
+# sql/prod/03b_service_user_oidc.sql and the README CI/CD section). It does NOT run on
 # push, so it never fails before Snowflake auth is set up.
 on:
   workflow_dispatch:
@@ -23,6 +23,41 @@ permissions:
   contents: read
 
 jobs:
+  build-image:
+    # Builds the SPCS container image on a native linux/amd64 runner (SPCS pools
+    # are x86_64). This is the right place to build it -- an Apple Silicon laptop
+    # would have to emulate amd64 via QEMU. Skip with inputs if the image is
+    # unchanged (rebuild only for code/dependency changes).
+    runs-on: ubuntu-latest
+    environment: deploy
+    env:
+      SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+      SNOWFLAKE_USER: ${{ vars.SNOWFLAKE_USER }}
+      SNOWFLAKE_ROLE: ${{ vars.SNOWFLAKE_ROLE }}
+      SNOWFLAKE_WAREHOUSE: ${{ vars.SNOWFLAKE_WAREHOUSE }}
+      SNOWFLAKE_DATABASE: DLT_DB
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: snowflakedb/snowflake-actions@v3
+        with:
+          use-oidc: true
+
+      # Docker-login to the Snowflake image registry using the OIDC-authed snow CLI.
+      - name: Log in to the Snowflake image registry
+        run: snow spcs image-registry login
+
+      - name: Build and push (linux/amd64)
+        run: |
+          host="$(snow spcs image-registry url)"
+          # Docker references must be lowercase; Snowflake maps to DLT_DB.DEPLOY.IMAGES.
+          target="$host/dlt_db/deploy/images/dlt-pipeline:latest"
+          echo "Building + pushing $target"
+          docker build --platform linux/amd64 -f deploy/spcs/Dockerfile -t "$target" .
+          docker push "$target"
+
   deploy:
     runs-on: ubuntu-latest
     # Gate on a GitHub environment (add required reviewers in repo settings).

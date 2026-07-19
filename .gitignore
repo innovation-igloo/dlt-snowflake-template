@@ -12,8 +12,14 @@ dist/
 ~/.dlt/
 *.duckdb
 
+# Make / emitted SQL artifacts
+build/
+
 # OS
 .DS_Store
+
+# Local Snowflake CLI / Cortex state (connections, conversation history)
+.snowflake/
 
 # Local agent onboarding notes (not part of the published template)
 TG-AGENT.md
