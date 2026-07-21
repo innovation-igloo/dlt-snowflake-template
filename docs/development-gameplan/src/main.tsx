@@ -37,7 +37,6 @@ import Deploy from './pages/Deploy';
 import CreditCost from './pages/CreditCost';
 import Scaling from './pages/Scaling';
 import Enterprise from './pages/Enterprise';
-import Roadmap from './pages/Roadmap';
 import './styles/global.css';
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
@@ -81,7 +80,6 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
           <Route path="cost" element={<CreditCost />} />
           <Route path="scaling" element={<Scaling />} />
           <Route path="enterprise" element={<Enterprise />} />
-          <Route path="roadmap" element={<Roadmap />} />
         </Route>
       </Routes>
     </BrowserRouter>

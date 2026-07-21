@@ -81,8 +81,7 @@ export default function Overview() {
 
         <Note variant="tip">
           <b>Scope note:</b> this site is the build reference and gameplan. The template repo is scaffolded
-          against it — registry, runner, bootstrap DDL, SPCS deploy, tests, and CI — per the{' '}
-          <b>Build Roadmap</b>.
+          against it — registry, runner, bootstrap DDL, SPCS deploy, tests, and CI.
         </Note>
       </div>
     </section>
