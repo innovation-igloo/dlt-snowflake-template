@@ -73,9 +73,6 @@ export const navGroups: NavGroup[] = [
       { path: '/enterprise', label: 'Enterprise Concerns' },
     ],
   },
-  {
-    items: [{ path: '/roadmap', label: 'Build Roadmap' }],
-  },
 ];
 
 // Flattened order for the prev/next pager.
